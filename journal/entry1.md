@@ -1,5 +1,4 @@
 # Learning Journey - Entry 1
-**Date:** 2025-10-19
 
 ## What I Worked On
 - Started my first C++ project: Stock Portfolio Tracker
