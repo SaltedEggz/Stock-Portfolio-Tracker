@@ -1,8 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 
-
+using namespace std;
 using std::cin;
 using std::cout; 
 using std::ios;
@@ -11,152 +12,116 @@ using std::ifstream;
 using std::ofstream;
 using std::string;
 
-
-void displayPortfolio()
-{
-    string stock;
+struct Stock{
+    string symbol;
+    double price;
     int shares;
-    double price;  
-    double total = 0;
-    cout<<endl;
-    ifstream stockFile("portfolio.txt");
-        if(!stockFile){
-            cout<<"Could not open portfolio.txt"<<endl;   
-        }
-    
+};
 
-        cout<<"--- Your Portfolio ---"<<endl;
-        while(stockFile >> stock >> price >> shares){
-            cout<<stock<<": $"<<price<< " x " <<shares<<endl;
-            total += price * shares;
-        }
+void loadPortfolio(vector<Stock>& portfolio){
+    ifstream inFile("portfolio.txt");
+    if(!inFile){
+        cout<<"No exsisting portfolio found. Starting new.\n";
+    }
 
-        cout<<"Total portfolio value: $"<<total<<endl;
+    Stock s;
+    while(inFile >> s.symbol>>s.price>>s.shares){
+        portfolio.push_back(s);
+    }
+    inFile.close();
+}
+
+void savePortfolio(const vector<Stock>& portfolio) {
+    ofstream outFile("portfolio.txt");
+    if (!outFile) {
+        cout << "Error saving portfolio.\n";
+        return;
+    }
+
+    for (const Stock& s : portfolio) {
+        outFile << s.symbol << " " << s.price << " " << s.shares << endl;
+    }
+
+    outFile.close();
 }
 
 
-void addStock()
-{
-    string stock;
-    int shares;
-    double price;  
 
-    cout<<endl;
-    ofstream outFile("portfolio.txt", ios::app);
-    if(!outFile){
-        cout<<"Could not open portfolio.txt"<<endl;
-           
+
+
+
+void displayPortfolio(const vector<Stock>& portfolio)
+{
+    double total = 0;
+    cout<<"--- Your Portfolio ---"<<endl;
+    for(const Stock& s : portfolio){
+        cout<<s.symbol<<": $"<<s.price<< " x " <<s.shares<<endl;
+        total += s.price * s.shares;
     }
+    cout<<"Total portfolio value: $"<<total<<endl;
+}
+
+
+void addStock(vector<Stock>& portfolio)
+{
+    Stock s; 
     cout<<"Symbol: ";
-    cin>>stock;
+    cin>>s.symbol;
     cout<<"Price: ";
-    cin>>price;
+    cin>>s.price;
     cout<<"Shares: ";
-    cin>>shares;
-    outFile<<stock<<" "<<price<<" "<<shares<<endl;
-    outFile.close();
+    cin>>s.shares;
+    
+    portfolio.push_back(s);
     cout<<"Added sucessfully"<<endl<<endl;
 }
 
 
-void removeStock(){
-    string stockToRemove;
+void removeStock(vector<Stock>& portfolio)
+{
+    string symbol;
     cout<<"Symbol of stock to remove: ";
-    cin>>stockToRemove;
+    cin>>symbol;
 
-    ifstream inFile("portfolio.txt");
-    if(!inFile){
-        cout<<"Could not open txt"<<endl;
-        return;
-    }
-
-    ofstream tempFile("temp.txt");
-    if(!tempFile){
-        cout<<"ERROR tempFile could not be created."<<endl;
-        return;
-    }
-
-    string stock;
-    double price;
-    int shares;
     bool found = false;
 
-    while(inFile>>stock>>price>>shares){
-        if(stock != stockToRemove){
-            tempFile<<stock<<" "<<price<<" "<<shares<<endl;        
-        }else{
+    for(auto it = portfolio.begin(); it !=portfolio.end(); ++it){
+        if(it->symbol == symbol){
+            portfolio.erase(it);
+            cout<<"Stock removed.\n";
             found = true;
+            break;
         }
     }
-
-    inFile.close();
-    tempFile.close();
-
-    if(found){
-        remove("portfolio.txt");
-        rename("temp.txt", "portfolio.txt");
-        cout<<"Stock removed"<<endl;
-    }else{
-        remove("temp.txt");
-        cout<<"Stock not found";
-    }
+    if(!found) cout<<"Stock not found.\n";
 }
 
 
-void updateStock() {
-    string stockToUpdate;
+void updateStock(vector<Stock>& portfolio) {
+    string symbol;
     cout << "Stock to update: ";
-    cin >> stockToUpdate;
+    cin >> symbol;
 
-    ifstream inFile("portfolio.txt");
-    if (!inFile) {
-        cout << "Could not open portfolio.txt" << endl;
-        return;
-    }
-
-    ofstream tempFile("temp.txt");
-    if (!tempFile) {
-        cout << "Could not create temporary file" << endl;
-        return;
-    }
-
-    string stock;
-    double price;
-    int shares;
     bool found = false;
-
-    while (inFile >> stock >> price >> shares) {
-        if (stock == stockToUpdate) {
-            double newPrice;
-            int newShares;
-            cout << "New price: ";
-            cin >> newPrice;
-            cout << "New shares: ";
-            cin >> newShares;
-            price = newPrice;
-            shares = newShares;
+    for (Stock& s : portfolio) {
+        if (s.symbol == symbol) {
+            cout << "New price: "; cin >> s.price;
+            cout << "New shares: "; cin >> s.shares;
             found = true;
+            break;
         }
-        tempFile << stock << " " << price << " " << shares << endl;
     }
-
-    inFile.close();
-    tempFile.close();
-
-    if (found) {
-        remove("portfolio.txt");
-        rename("temp.txt", "portfolio.txt");
-        cout << "Stock updated successfully!" << endl;
-    } else {
-        remove("temp.txt");
-        cout << "Stock not found." << endl;
-    }
+    if (found) cout << "Stock updated successfully!" << endl;
+    else cout << "Stock not found." << endl;
 }
 
 
 
 int main()
 {   
+    vector<Stock> portofolio;
+    loadPortfolio(portofolio);
+    
     int choice;
     
     do {
@@ -171,16 +136,16 @@ int main()
 
         switch(choice){
             case 1:
-                displayPortfolio();
+                displayPortfolio(portofolio);
                 break;
             case 2:
-                addStock();
+                addStock(portofolio);
                 break;
             case 3:
-                removeStock();
+                removeStock(portofolio);
                 break;
             case 4:
-                updateStock();
+                updateStock(portofolio);
                 break;
             case 5:
                 cout<<"Exiting...."<<endl;
